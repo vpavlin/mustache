@@ -206,22 +206,6 @@ var tests = []Test{
 	{`"{{{person.name}}}" == "{{#person}}{{{name}}}{{/person}}"`, map[string]interface{}{"person": map[string]string{"name": "Joe"}}, `"Joe" == "Joe"`, nil},
 	{`"{{a.b.c.d.e.name}}" == "Phil"`, map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Phil"}}}}}}, `"Phil" == "Phil"`, nil},
 	{`"{{#a}}{{b.c.d.e.name}}{{/a}}" == "Phil"`, map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Phil"}}}}}, "b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Wrong"}}}}}, `"Phil" == "Phil"`, nil},
-	{`{{a.b.0.c}} => {{a.b.1.c}}`,
-		map[string]interface{}{
-			"a": map[string]interface{}{
-				"b": []map[string]interface{}{
-					{
-						"c": "hello",
-					},
-					{
-						"c": "ehlo",
-					},
-				},
-			},
-		},
-		"hello => ehlo",
-		nil,
-	},
 }
 
 func TestBasic(t *testing.T) {
@@ -729,6 +713,49 @@ func compareTags(t *testing.T, actual []Tag, expected []tag) {
 		default:
 			t.Errorf("invalid tag type: %s", tag.Type())
 			return
+		}
+	}
+}
+
+var experimental = []Test{
+	{`{{a.b.0.c}}{{a.b.1.c}}`,
+		map[string]interface{}{
+			"a": map[string]interface{}{
+				"b": []map[string]interface{}{
+					{
+						"c": "hello",
+					},
+					{
+						"c": "ehlo",
+					},
+				},
+			},
+		},
+		"helloehlo",
+		nil,
+	},
+}
+
+func TestExperimental(t *testing.T) {
+	// Default behavior, Experimental=false
+	for _, test := range experimental {
+		output, err := Render(test.tmpl, test.context)
+		if err != nil {
+			t.Errorf("%q expected %q but got error %q", test.tmpl, test.expected, err.Error())
+		} else if output != "" {
+			t.Errorf("%q expected %q got %q", test.tmpl, test.expected, output)
+		}
+	}
+
+	// Now set Experimental=true and test again
+	Experimental = true
+	defer func() { Experimental = false }()
+	for _, test := range experimental {
+		output, err := Render(test.tmpl, test.context)
+		if err != nil {
+			t.Errorf("%s expected %s but got error %s", test.tmpl, test.expected, err.Error())
+		} else if output != test.expected {
+			t.Errorf("%q expected %q got %q", test.tmpl, test.expected, output)
 		}
 	}
 }
