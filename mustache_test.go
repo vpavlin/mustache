@@ -206,6 +206,22 @@ var tests = []Test{
 	{`"{{{person.name}}}" == "{{#person}}{{{name}}}{{/person}}"`, map[string]interface{}{"person": map[string]string{"name": "Joe"}}, `"Joe" == "Joe"`, nil},
 	{`"{{a.b.c.d.e.name}}" == "Phil"`, map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Phil"}}}}}}, `"Phil" == "Phil"`, nil},
 	{`"{{#a}}{{b.c.d.e.name}}{{/a}}" == "Phil"`, map[string]interface{}{"a": map[string]interface{}{"b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Phil"}}}}}, "b": map[string]interface{}{"c": map[string]interface{}{"d": map[string]interface{}{"e": map[string]string{"name": "Wrong"}}}}}, `"Phil" == "Phil"`, nil},
+	{`{{a.b.0.c}} => {{a.b.1.c}}`,
+		map[string]interface{}{
+			"a": map[string]interface{}{
+				"b": []map[string]interface{}{
+					{
+						"c": "hello",
+					},
+					{
+						"c": "ehlo",
+					},
+				},
+			},
+		},
+		"hello => ehlo",
+		nil,
+	},
 }
 
 func TestBasic(t *testing.T) {
@@ -323,15 +339,15 @@ func TestPartial(t *testing.T) {
 }
 
 /*
-func TestSectionPartial(t *testing.T) {
-    filename := path.Join(path.Join(os.Getenv("PWD"), "tests"), "test3.mustache")
-    expected := "Mike\nJoe\n"
-    context := map[string]interface{}{"users": []User{{"Mike", 1}, {"Joe", 2}}}
-    output := RenderFile(filename, context)
-    if output != expected {
-        t.Fatalf("testSectionPartial expected %q got %q", expected, output)
-    }
-}
+	func TestSectionPartial(t *testing.T) {
+	    filename := path.Join(path.Join(os.Getenv("PWD"), "tests"), "test3.mustache")
+	    expected := "Mike\nJoe\n"
+	    context := map[string]interface{}{"users": []User{{"Mike", 1}, {"Joe", 2}}}
+	    output := RenderFile(filename, context)
+	    if output != expected {
+	        t.Fatalf("testSectionPartial expected %q got %q", expected, output)
+	    }
+	}
 */
 func TestMultiContext(t *testing.T) {
 	output, err := Render(`{{hello}} {{World}}`, map[string]string{"hello": "hello"}, struct{ World string }{"world"})
