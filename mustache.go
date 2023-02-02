@@ -18,6 +18,10 @@ var (
 	// is true (the default), an empty string is emitted. If it is false, an error
 	// is generated instead.
 	AllowMissingVariables = true
+	// Experimental defines the behavior for experimental features (e.g. commonly
+	// used, but not part of the spec). If it is false (default) it will ignore
+	// the code paths, if true, it will allow you to leverage the experimental features.
+	Experimental = false
 )
 
 // RenderFunc is provided to lambda functions for rendering.
@@ -511,6 +515,19 @@ Outer:
 				continue Outer
 			case reflect.Map:
 				ret := av.MapIndex(reflect.ValueOf(name))
+				if ret.IsValid() {
+					return ret, nil
+				}
+				continue Outer
+			case reflect.Slice:
+				if !Experimental {
+					continue Outer
+				}
+				index, err := strconv.Atoi(name)
+				if err != nil {
+					return v, err
+				}
+				ret := av.Index(index)
 				if ret.IsValid() {
 					return ret, nil
 				}
